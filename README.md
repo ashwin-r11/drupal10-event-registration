@@ -232,6 +232,18 @@ web/modules/custom/event_registration/
 └── event_registration.services.yml
 ```
 
+## Documentation
+
+Detailed documentation is available in the `/docs` directory:
+
+| Document                                      | Description                             |
+| --------------------------------------------- | --------------------------------------- |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md)       | Module architecture and design patterns |
+| [FORMS.md](docs/FORMS.md)                     | Detailed form documentation             |
+| [DATABASE.md](docs/DATABASE.md)               | Database schema and queries             |
+| [API.md](docs/API.md)                         | Service API reference                   |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions             |
+
 ## License
 
 This project is provided as-is for educational and demonstration purposes.
