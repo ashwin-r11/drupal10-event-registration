@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\event_registration\Service;
 
 use Drupal\Core\Database\Connection;
+use Drupal\Component\Datetime\TimeInterface;
 
 /**
  * Repository service for event registration database operations.
@@ -20,14 +21,24 @@ class EventRegistrationRepository
   protected Connection $database;
 
   /**
+   * The time service.
+   *
+   * @var \Drupal\Component\Datetime\TimeInterface
+   */
+  protected TimeInterface $time;
+
+  /**
    * Constructs an EventRegistrationRepository object.
    *
    * @param \Drupal\Core\Database\Connection $database
    *   The database connection.
+   * @param \Drupal\Component\Datetime\TimeInterface $time
+   *   The time service.
    */
-  public function __construct(Connection $database)
+  public function __construct(Connection $database, TimeInterface $time)
   {
     $this->database = $database;
+    $this->time = $time;
   }
 
   /**
@@ -122,7 +133,7 @@ class EventRegistrationRepository
         'college' => $data['college'],
         'department' => $data['department'],
         'event_id' => $data['event_id'],
-        'created' => \Drupal::time()->getRequestTime(),
+        'created' => $this->time->getRequestTime(),
       ])
       ->execute();
   }
