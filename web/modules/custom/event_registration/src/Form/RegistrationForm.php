@@ -6,8 +6,10 @@ namespace Drupal\event_registration\Form;
 
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\event_registration\Service\EventRegistrationRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -25,6 +27,13 @@ class RegistrationForm extends FormBase
     protected EventRegistrationRepository $repository;
 
     /**
+     * The mail manager service.
+     *
+     * @var \Drupal\Core\Mail\MailManagerInterface
+     */
+    protected MailManagerInterface $mailManager;
+
+    /**
      * Event category options.
      */
     const CATEGORIES = [
@@ -39,10 +48,20 @@ class RegistrationForm extends FormBase
      *
      * @param \Drupal\event_registration\Service\EventRegistrationRepository $repository
      *   The event registration repository.
+     * @param \Drupal\Core\Mail\MailManagerInterface $mail_manager
+     *   The mail manager service.
+     * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+     *   The config factory service.
      */
-    public function __construct(EventRegistrationRepository $repository)
-    {
+    public function __construct(
+        EventRegistrationRepository $repository,
+        MailManagerInterface $mail_manager,
+        ConfigFactoryInterface $config_factory
+    ) {
         $this->repository = $repository;
+        $this->mailManager = $mail_manager;
+        // Use parent's setConfigFactory method.
+        $this->setConfigFactory($config_factory);
     }
 
     /**
@@ -51,7 +70,9 @@ class RegistrationForm extends FormBase
     public static function create(ContainerInterface $container): static
     {
         return new static(
-            $container->get('event_registration.repository')
+            $container->get('event_registration.repository'),
+            $container->get('plugin.manager.mail'),
+            $container->get('config.factory')
         );
     }
 
@@ -320,13 +341,38 @@ class RegistrationForm extends FormBase
             // Save registration using repository.
             $registration_id = $this->repository->addRegistration($data);
 
-            // Get event details for success message.
+            // Get event details for emails and success message.
             $event = $this->repository->getEventById($data['event_id']);
             $event_name = $event ? $event->event_name : $this->t('Unknown Event');
+            $event_date = $event ? date('F j, Y', strtotime($event->event_date)) : '';
+            $category = $event ? (self::CATEGORIES[$event->category] ?? $event->category) : '';
+
+            // Prepare email parameters.
+            $mail_params = [
+                'full_name' => $data['full_name'],
+                'email' => $data['email'],
+                'college' => $data['college'],
+                'department' => $data['department'],
+                'event_name' => $event_name,
+                'event_date' => $event_date,
+                'category' => $category,
+            ];
+
+            // Send confirmation email to participant.
+            $this->sendEmail('registration_confirmation', $data['email'], $mail_params);
+
+            // Check if admin notifications are enabled.
+            $config = $this->configFactory->get('event_registration.settings');
+            if ($config->get('enable_admin_notifications')) {
+                $admin_email = $config->get('admin_notification_email');
+                if (!empty($admin_email)) {
+                    $this->sendEmail('admin_notification', $admin_email, $mail_params);
+                }
+            }
 
             // Display success message.
             $this->messenger()->addStatus(
-                $this->t('Thank you, @name! You have successfully registered for "@event".', [
+                $this->t('Thank you, @name! You have successfully registered for "@event". A confirmation email has been sent.', [
                     '@name' => $data['full_name'],
                     '@event' => $event_name,
                 ])
@@ -347,6 +393,42 @@ class RegistrationForm extends FormBase
             );
             $this->getLogger('event_registration')->error('Registration failed: @message', [
                 '@message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Sends an email using the mail manager.
+     *
+     * @param string $key
+     *   The email template key.
+     * @param string $to
+     *   The recipient email address.
+     * @param array $params
+     *   The email parameters.
+     */
+    protected function sendEmail(string $key, string $to, array $params): void
+    {
+        $langcode = $this->currentUser()->getPreferredLangcode();
+        $result = $this->mailManager->mail(
+            'event_registration',
+            $key,
+            $to,
+            $langcode,
+            $params,
+            NULL,
+            TRUE
+        );
+
+        if ($result['result'] !== TRUE) {
+            $this->getLogger('event_registration')->warning('Failed to send @key email to @to', [
+                '@key' => $key,
+                '@to' => $to,
+            ]);
+        } else {
+            $this->getLogger('event_registration')->info('Sent @key email to @to', [
+                '@key' => $key,
+                '@to' => $to,
             ]);
         }
     }
