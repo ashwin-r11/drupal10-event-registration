@@ -1,0 +1,149 @@
+# GitHub Actions CI workflow for Event Registration module
+# Validates that the Drupal module installs correctly and database schema is created
+
+name: CI
+
+on:
+    push:
+        branches: [main, master]
+    pull_request:
+        branches: [main, master]
+
+jobs:
+    test:
+        name: Drupal Module Installation Test
+        runs-on: ubuntu-latest
+
+        services:
+            mysql:
+                image: mysql:8.0
+                env:
+                    MYSQL_ROOT_PASSWORD: root
+                    MYSQL_DATABASE: drupal
+                ports:
+                    - 3306:3306
+                options: >-
+                    --health-cmd="mysqladmin ping"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=3
+
+        steps:
+            # Step 1: Checkout the repository
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            # Step 2: Setup PHP with required extensions
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.2"
+                  extensions: mbstring, pdo, pdo_mysql, gd, xml, curl, zip
+                  coverage: none
+
+            # Step 3: Get Composer cache directory
+            - name: Get Composer Cache Directory
+              id: composer-cache
+              run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+            # Step 4: Cache Composer dependencies
+            - name: Cache Composer dependencies
+              uses: actions/cache@v3
+              with:
+                  path: ${{ steps.composer-cache.outputs.dir }}
+                  key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+                  restore-keys: ${{ runner.os }}-composer-
+
+            # Step 5: Install Composer dependencies
+            - name: Install Composer dependencies
+              run: composer install --no-progress --prefer-dist --optimize-autoloader
+              working-directory: ./
+
+            # Step 6: Wait for MySQL to be ready
+            - name: Wait for MySQL
+              run: |
+                  while ! mysqladmin ping -h"127.0.0.1" --silent; do
+                    sleep 1
+                  done
+
+            # Step 7: Install Drupal site
+            - name: Install Drupal
+              run: |
+                  cd web
+                  php core/scripts/drupal install standard \
+                    --langcode=en \
+                    --site-name="Event Registration Test" \
+                    --account-name=admin \
+                    --account-pass=admin \
+                    --db-url=mysql://root:root@127.0.0.1:3306/drupal
+              env:
+                  DRUPAL_DEV_MODE: 1
+
+            # Step 8: Enable the event_registration module
+            - name: Enable Event Registration module
+              run: |
+                  cd web
+                  ../vendor/bin/drush en event_registration -y
+                  ../vendor/bin/drush cr
+
+            # Step 9: Verify module is enabled
+            - name: Verify module is enabled
+              run: |
+                  cd web
+                  MODULE_STATUS=$(../vendor/bin/drush pm:list --status=enabled --format=list | grep -c "event_registration" || true)
+                  if [ "$MODULE_STATUS" -eq "0" ]; then
+                    echo "ERROR: event_registration module is not enabled"
+                    exit 1
+                  fi
+                  echo "✓ event_registration module is enabled"
+
+            # Step 10: Verify database tables exist
+            - name: Verify database tables exist
+              run: |
+                  cd web
+                  # Check event_configurations table
+                  CONFIG_TABLE=$(../vendor/bin/drush sqlq "SHOW TABLES LIKE 'event_configurations';" | grep -c "event_configurations" || true)
+                  if [ "$CONFIG_TABLE" -eq "0" ]; then
+                    echo "ERROR: event_configurations table does not exist"
+                    exit 1
+                  fi
+                  echo "✓ event_configurations table exists"
+
+                  # Check event_registrations table
+                  REG_TABLE=$(../vendor/bin/drush sqlq "SHOW TABLES LIKE 'event_registrations';" | grep -c "event_registrations" || true)
+                  if [ "$REG_TABLE" -eq "0" ]; then
+                    echo "ERROR: event_registrations table does not exist"
+                    exit 1
+                  fi
+                  echo "✓ event_registrations table exists"
+
+            # Step 11: Verify routes are registered
+            - name: Verify routes are registered
+              run: |
+                  cd web
+                  ROUTES=$(../vendor/bin/drush route 2>/dev/null | grep -c "event_registration" || true)
+                  if [ "$ROUTES" -lt "4" ]; then
+                    echo "ERROR: Expected at least 4 event_registration routes, found $ROUTES"
+                    exit 1
+                  fi
+                  echo "✓ All $ROUTES event_registration routes are registered"
+
+            # Step 12: Verify permissions are registered
+            - name: Verify permissions are registered
+              run: |
+                  cd web
+                  PERMS=$(../vendor/bin/drush role:perm:list --filter="event" 2>/dev/null | grep -c "administer event registration" || true)
+                  if [ "$PERMS" -eq "0" ]; then
+                    echo "WARNING: Permission 'administer event registration' not found in role list"
+                  else
+                    echo "✓ Permissions are registered"
+                  fi
+
+            - name: CI Passed
+              run: |
+                  echo "============================================"
+                  echo "✓ All CI checks passed!"
+                  echo "  - Module enabled successfully"
+                  echo "  - Database tables created"
+                  echo "  - Routes registered"
+                  echo "============================================"
