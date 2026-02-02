@@ -1,0 +1,8 @@
+name: Event Registration
+type: module
+description: Custom module for event registration with AJAX-powered forms, email notifications, and admin reporting.
+package: Custom
+core_version_requirement: ^10
+php: 8.1
+# Dependencies
+# No contrib modules required - core only

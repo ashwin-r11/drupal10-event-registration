@@ -1,0 +1,6 @@
+# Permissions for the Event Registration module
+
+administer event registration:
+  title: "Administer event registration"
+  description: "Access administrative settings, manage events, and view registration reports."
+  restrict access: true
