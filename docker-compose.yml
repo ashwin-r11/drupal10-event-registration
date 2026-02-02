@@ -1,0 +1,64 @@
+# Docker Compose configuration for Drupal 10 Event Registration development
+#
+# Usage:
+#   docker compose up -d
+#   docker compose exec drupal drush site:install ...
+#
+# Services:
+#   - drupal: Drupal 10 with PHP 8.2 Apache
+#   - db: MariaDB 10.6 database
+
+services:
+  drupal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: drupal_event_reg
+    ports:
+      - "${DRUPAL_PORT:-8080}:80"
+    volumes:
+      # Mount custom module for development
+      - ./web/modules/custom/event_registration:/opt/drupal/web/modules/custom/event_registration
+      # Persist Drupal files
+      - drupal_files:/opt/drupal/web/sites/default/files
+    environment:
+      MYSQL_HOST: db
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-drupal}
+      MYSQL_USER: ${MYSQL_USER:-drupal}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-drupal}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - drupal_network
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10.6
+    container_name: drupal_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-drupal}
+      MYSQL_USER: ${MYSQL_USER:-drupal}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-drupal}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - drupal_network
+    restart: unless-stopped
+
+volumes:
+  drupal_files:
+    driver: local
+  db_data:
+    driver: local
+
+networks:
+  drupal_network:
+    driver: bridge

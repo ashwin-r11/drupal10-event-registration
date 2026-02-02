@@ -1,0 +1,27 @@
+# Environment files
+.env
+
+# Docker volumes (local)
+db_data/
+drupal_files/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Drupal generated (if any)
+web/sites/*/settings.local.php
+web/sites/*/files/
+web/sites/*/private/
+
+# Composer (for local dev outside Docker)
+/vendor/
+
+# Logs
+*.log
