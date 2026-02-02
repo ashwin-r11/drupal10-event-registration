@@ -1,5 +1,7 @@
 # Event Registration Module for Drupal 10
 
+[![CI](https://github.com/ashwin-r11/drupal10-event-registration/actions/workflows/ci.yml/badge.svg)](https://github.com/ashwin-r11/drupal10-event-registration/actions/workflows/ci.yml)
+
 A complete Drupal 10 custom module for event registration management, featuring admin configuration, public registration forms with AJAX-dependent dropdowns, email notifications, and CSV export.
 
 ## Features
