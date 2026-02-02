@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="docs/logo.png" alt="Logo" width="120" height="auto" />
+  <img src="docs/logo.png" alt="Logo" width="200" height="auto" />
   <br>
-  <img src="docs/banner.png" alt="Banner" width="100%" height="auto" />
+  <img src="docs/banner.png" alt="Banner" width="800" height="auto" />
 
   <h1>Event Registration Module for Drupal 10</h1>
 
