@@ -204,4 +204,96 @@ class EventRegistrationRepository
       ->fetchCol();
   }
 
+  /**
+   * Gets all unique event dates from registrations.
+   *
+   * @return array
+   *   An array of unique event dates.
+   */
+  public function getUniqueEventDates(): array
+  {
+    return $this->database->select('event_configurations', 'ec')
+      ->fields('ec', ['event_date'])
+      ->groupBy('event_date')
+      ->orderBy('event_date', 'ASC')
+      ->execute()
+      ->fetchCol();
+  }
+
+  /**
+   * Gets event names for a specific date.
+   *
+   * @param string $eventDate
+   *   The event date (YYYY-MM-DD).
+   *
+   * @return array
+   *   An array of event objects.
+   */
+  public function getEventsByDate(string $eventDate): array
+  {
+    return $this->database->select('event_configurations', 'ec')
+      ->fields('ec')
+      ->condition('event_date', $eventDate)
+      ->orderBy('event_name', 'ASC')
+      ->execute()
+      ->fetchAll();
+  }
+
+  /**
+   * Gets registrations with optional filters.
+   *
+   * @param array $filters
+   *   Optional filters:
+   *   - event_date: Filter by event date
+   *   - event_id: Filter by specific event ID
+   *
+   * @return array
+   *   An array of registration objects with event details.
+   */
+  public function getRegistrations(array $filters = []): array
+  {
+    $query = $this->database->select('event_registrations', 'er');
+    $query->join('event_configurations', 'ec', 'er.event_id = ec.id');
+    $query->fields('er', ['id', 'full_name', 'email', 'college', 'department', 'created']);
+    $query->fields('ec', ['event_name', 'event_date', 'category']);
+    $query->addField('er', 'event_id', 'event_id');
+
+    if (!empty($filters['event_date'])) {
+      $query->condition('ec.event_date', $filters['event_date']);
+    }
+
+    if (!empty($filters['event_id'])) {
+      $query->condition('er.event_id', $filters['event_id']);
+    }
+
+    $query->orderBy('er.created', 'DESC');
+
+    return $query->execute()->fetchAll();
+  }
+
+  /**
+   * Gets the count of registrations with optional filters.
+   *
+   * @param array $filters
+   *   Optional filters (same as getRegistrations).
+   *
+   * @return int
+   *   The count of registrations.
+   */
+  public function getRegistrationCount(array $filters = []): int
+  {
+    $query = $this->database->select('event_registrations', 'er');
+    $query->join('event_configurations', 'ec', 'er.event_id = ec.id');
+
+    if (!empty($filters['event_date'])) {
+      $query->condition('ec.event_date', $filters['event_date']);
+    }
+
+    if (!empty($filters['event_id'])) {
+      $query->condition('er.event_id', $filters['event_id']);
+    }
+
+    return (int) $query->countQuery()->execute()->fetchField();
+  }
+
 }

@@ -23,3 +23,18 @@ event_registration.register:
     _title: "Event Registration"
   requirements:
     _registration_access: "TRUE"
+
+event_registration.report:
+  path: "/admin/reports/event-registrations"
+  defaults:
+    _controller: '\Drupal\event_registration\Controller\RegistrationReportController::listing'
+    _title: "Event Registrations Report"
+  requirements:
+    _permission: "administer event registration"
+
+event_registration.report_export:
+  path: "/admin/reports/event-registrations/export"
+  defaults:
+    _controller: '\Drupal\event_registration\Controller\RegistrationReportController::exportCsv'
+  requirements:
+    _permission: "administer event registration"
