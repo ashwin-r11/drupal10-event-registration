@@ -237,8 +237,69 @@ class RegistrationForm extends FormBase
      */
     public function validateForm(array &$form, FormStateInterface $form_state): void
     {
-        // Basic validation - detailed validation in Prompt 5.
         parent::validateForm($form, $form_state);
+
+        // Get form values.
+        $full_name = trim($form_state->getValue('full_name') ?? '');
+        $email = trim($form_state->getValue('email') ?? '');
+        $college = trim($form_state->getValue('college') ?? '');
+        $department = trim($form_state->getValue('department') ?? '');
+        $event_id = $form_state->getValue('event_id');
+
+        // Regex pattern to disallow special characters.
+        // Allows letters, numbers, spaces, hyphens, apostrophes, periods, and commas.
+        $special_char_pattern = '/[<>\"&\\\\\/\[\]{}|^~`]/';
+
+        // Validate full name for special characters.
+        if (!empty($full_name) && preg_match($special_char_pattern, $full_name)) {
+            $form_state->setErrorByName(
+                'full_name',
+                $this->t('Full name contains invalid characters. Please avoid using special characters like <, >, ", &, etc.')
+            );
+        }
+
+        // Validate college name for special characters.
+        if (!empty($college) && preg_match($special_char_pattern, $college)) {
+            $form_state->setErrorByName(
+                'college',
+                $this->t('College name contains invalid characters. Please avoid using special characters like <, >, ", &, etc.')
+            );
+        }
+
+        // Validate department for special characters.
+        if (!empty($department) && preg_match($special_char_pattern, $department)) {
+            $form_state->setErrorByName(
+                'department',
+                $this->t('Department contains invalid characters. Please avoid using special characters like <, >, ", &, etc.')
+            );
+        }
+
+        // Validate email format (additional check beyond HTML5 validation).
+        if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $form_state->setErrorByName(
+                'email',
+                $this->t('Please enter a valid email address.')
+            );
+        }
+
+        // Check for duplicate registration (Email + Event ID).
+        if (!empty($email) && !empty($event_id) && $event_id !== '') {
+            $is_duplicate = $this->repository->checkDuplicateRegistration($email, (int) $event_id);
+            if ($is_duplicate) {
+                $form_state->setErrorByName(
+                    'email',
+                    $this->t('You have already registered for this event with this email address.')
+                );
+            }
+        }
+
+        // Validate that an event is selected.
+        if (empty($event_id) || $event_id === '') {
+            $form_state->setErrorByName(
+                'event_id',
+                $this->t('Please select an event to register for.')
+            );
+        }
     }
 
     /**
@@ -246,8 +307,48 @@ class RegistrationForm extends FormBase
      */
     public function submitForm(array &$form, FormStateInterface $form_state): void
     {
-        // Submission logic will be implemented in Prompt 5.
-        $this->messenger()->addStatus($this->t('Form submitted. (Submission logic pending Prompt 5)'));
+        try {
+            // Gather form values.
+            $data = [
+                'full_name' => trim($form_state->getValue('full_name')),
+                'email' => trim($form_state->getValue('email')),
+                'college' => trim($form_state->getValue('college')),
+                'department' => trim($form_state->getValue('department')),
+                'event_id' => (int) $form_state->getValue('event_id'),
+            ];
+
+            // Save registration using repository.
+            $registration_id = $this->repository->addRegistration($data);
+
+            // Get event details for success message.
+            $event = $this->repository->getEventById($data['event_id']);
+            $event_name = $event ? $event->event_name : $this->t('Unknown Event');
+
+            // Display success message.
+            $this->messenger()->addStatus(
+                $this->t('Thank you, @name! You have successfully registered for "@event".', [
+                    '@name' => $data['full_name'],
+                    '@event' => $event_name,
+                ])
+            );
+
+            // Log the registration.
+            $this->getLogger('event_registration')->info('New registration #@id: @email for event @event_id', [
+                '@id' => $registration_id,
+                '@email' => $data['email'],
+                '@event_id' => $data['event_id'],
+            ]);
+
+            // Redirect to front page after successful registration.
+            $form_state->setRedirect('<front>');
+        } catch (\Exception $e) {
+            $this->messenger()->addError(
+                $this->t('An error occurred while processing your registration. Please try again later.')
+            );
+            $this->getLogger('event_registration')->error('Registration failed: @message', [
+                '@message' => $e->getMessage(),
+            ]);
+        }
     }
 
 }
