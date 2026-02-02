@@ -9,7 +9,8 @@ use Drupal\Core\Database\Connection;
 /**
  * Repository service for event registration database operations.
  */
-class EventRegistrationRepository {
+class EventRegistrationRepository
+{
 
   /**
    * The database connection.
@@ -24,7 +25,8 @@ class EventRegistrationRepository {
    * @param \Drupal\Core\Database\Connection $database
    *   The database connection.
    */
-  public function __construct(Connection $database) {
+  public function __construct(Connection $database)
+  {
     $this->database = $database;
   }
 
@@ -42,7 +44,8 @@ class EventRegistrationRepository {
    * @return int
    *   The ID of the newly inserted event.
    */
-  public function addEvent(array $data): int {
+  public function addEvent(array $data): int
+  {
     return (int) $this->database->insert('event_configurations')
       ->fields([
         'registration_start_date' => $data['registration_start_date'],
@@ -63,7 +66,8 @@ class EventRegistrationRepository {
    * @return array
    *   An array of event objects.
    */
-  public function getEventsByCategory(string $category): array {
+  public function getEventsByCategory(string $category): array
+  {
     return $this->database->select('event_configurations', 'ec')
       ->fields('ec')
       ->condition('category', $category)
@@ -83,7 +87,8 @@ class EventRegistrationRepository {
    * @return bool
    *   TRUE if a duplicate registration exists, FALSE otherwise.
    */
-  public function checkDuplicateRegistration(string $email, int $eventId): bool {
+  public function checkDuplicateRegistration(string $email, int $eventId): bool
+  {
     $count = $this->database->select('event_registrations', 'er')
       ->condition('email', $email)
       ->condition('event_id', $eventId)
@@ -108,7 +113,8 @@ class EventRegistrationRepository {
    * @return int
    *   The ID of the newly inserted registration.
    */
-  public function addRegistration(array $data): int {
+  public function addRegistration(array $data): int
+  {
     return (int) $this->database->insert('event_registrations')
       ->fields([
         'full_name' => $data['full_name'],
@@ -127,7 +133,8 @@ class EventRegistrationRepository {
    * @return array
    *   An array of all event objects.
    */
-  public function getAllEvents(): array {
+  public function getAllEvents(): array
+  {
     return $this->database->select('event_configurations', 'ec')
       ->fields('ec')
       ->orderBy('event_date', 'ASC')
@@ -144,7 +151,8 @@ class EventRegistrationRepository {
    * @return object|null
    *   The event object or NULL if not found.
    */
-  public function getEventById(int $eventId): ?object {
+  public function getEventById(int $eventId): ?object
+  {
     $result = $this->database->select('event_configurations', 'ec')
       ->fields('ec')
       ->condition('id', $eventId)
@@ -165,7 +173,8 @@ class EventRegistrationRepository {
    * @return array
    *   An array of event objects.
    */
-  public function getEventsByCategoryAndDate(string $category, string $eventDate): array {
+  public function getEventsByCategoryAndDate(string $category, string $eventDate): array
+  {
     return $this->database->select('event_configurations', 'ec')
       ->fields('ec')
       ->condition('category', $category)
@@ -184,7 +193,8 @@ class EventRegistrationRepository {
    * @return array
    *   An array of unique event dates.
    */
-  public function getEventDatesByCategory(string $category): array {
+  public function getEventDatesByCategory(string $category): array
+  {
     return $this->database->select('event_configurations', 'ec')
       ->fields('ec', ['event_date'])
       ->condition('category', $category)

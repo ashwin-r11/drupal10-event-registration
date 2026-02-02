@@ -1,0 +1,17 @@
+# Routes for the Event Registration module.
+
+event_registration.settings:
+  path: "/admin/config/event-registration/settings"
+  defaults:
+    _form: '\Drupal\event_registration\Form\EventSettingsForm'
+    _title: "Event Registration Settings"
+  requirements:
+    _permission: "administer event registration"
+
+event_registration.add_event:
+  path: "/admin/config/event-registration/add-event"
+  defaults:
+    _form: '\Drupal\event_registration\Form\EventAddForm'
+    _title: "Add Event"
+  requirements:
+    _permission: "administer event registration"

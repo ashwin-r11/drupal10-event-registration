@@ -1,0 +1,3 @@
+# Default configuration for Event Registration module.
+admin_notification_email: ""
+enable_admin_notifications: false

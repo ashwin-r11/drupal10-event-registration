@@ -1,0 +1,12 @@
+# Schema for the Event Registration module configuration.
+
+event_registration.settings:
+  type: config_object
+  label: "Event Registration Settings"
+  mapping:
+    admin_notification_email:
+      type: email
+      label: "Admin notification email"
+    enable_admin_notifications:
+      type: boolean
+      label: "Enable admin notifications"
