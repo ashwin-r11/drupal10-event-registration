@@ -34,7 +34,7 @@ A complete Drupal 10 custom module for event registration management, featuring 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/drupal10-event-registration.git
+   git clone https://github.com/ashwin-r11/drupal10-event-registration.git
    cd drupal10-event-registration
    ```
 
@@ -238,7 +238,8 @@ web/modules/custom/event_registration/
 ├── event_registration.module
 ├── event_registration.permissions.yml
 ├── event_registration.routing.yml
-└── event_registration.services.yml
+├── event_registration.services.yml
+└── event_registration.sql
 ```
 
 ## Documentation
