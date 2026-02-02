@@ -2,3 +2,9 @@ services:
   event_registration.repository:
     class: Drupal\event_registration\Service\EventRegistrationRepository
     arguments: ["@database"]
+
+  event_registration.registration_access:
+    class: Drupal\event_registration\Access\RegistrationAccessCheck
+    arguments: ["@event_registration.repository"]
+    tags:
+      - { name: access_check, applies_to: _registration_access }

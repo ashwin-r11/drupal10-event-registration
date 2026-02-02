@@ -15,3 +15,11 @@ event_registration.add_event:
     _title: "Add Event"
   requirements:
     _permission: "administer event registration"
+
+event_registration.register:
+  path: "/register"
+  defaults:
+    _form: '\Drupal\event_registration\Form\RegistrationForm'
+    _title: "Event Registration"
+  requirements:
+    _registration_access: "TRUE"
