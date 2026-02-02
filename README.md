@@ -253,6 +253,22 @@ Detailed documentation is available in the `/docs` directory:
 | [API.md](docs/API.md)                         | Service API reference                   |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions             |
 
+## Screenshots
+
+<div align="center">
+  <h3>Public Registration Form</h3>
+  <img src="docs/demo_event_registration_form.png" alt="Registration Form" width="800" />
+  
+  <h3>Registration Success</h3>
+  <img src="docs/demo_event_registration_page.png" alt="Success Page" width="800" />
+
+  <h3>Admin Settings</h3>
+  <img src="docs/demo_Event_Registration_Settings.png" alt="Admin Settings" width="800" />
+
+  <h3>Email Logging (Watchdog)</h3>
+  <img src="docs/demo_Recent_log_messages.png" alt="Log Messages" width="800" />
+</div>
+
 ## License
 
 This project is provided as-is for educational and demonstration purposes.
